@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Blogs;
+use App\Models\Rate;
+use App\Models\Comment;
+use Auth;
+
+class BlogController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+       
+
+        $blogPosts = Blogs::paginate(3);
+        // dd($blogPosts);
+        return response()->json(['blogPosts' => $blogPosts], 200);
+
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function showBlogDetail($id)
+{
+    $blog = Blogs::find($id);
+    // dd($blog);
+    // lấy id bài viết trước và sau 
+    $previousBlogId = Blogs::where('id', '<', $id)->max('id');
+    $nextBlogId = Blogs::where('id', '>', $id)->min('id');
+
+    $blogRates = Rate::where('id_blog', $id)->get();
+    if (!$blogRates->isEmpty()) {
+        $totalRate = $blogRates->sum('rate');
+        $averageRate = round($totalRate / $blogRates->count());
+    } else {
+        $averageRate = '';
+    }
+
+    // echo $averageRate;
+
+    $comments = Comment::where('id_blog', $id)->get();
+
+    // If you want to return JSON
+    return response()->json([
+        'blog' => $blog,
+        'previousBlogId' => $previousBlogId,
+        'nextBlogId' => $nextBlogId,
+        'averageRate' => $averageRate,
+        'comments' => $comments,
+    ]);
+
+    // If you want to return a view
+    // return view('frontend.blogs.blog', compact('blog', 'previousBlogId', 'nextBlogId', 'averageRate', 'comments'));
+}
+public function handleRate(Request $request)
+{
+    $data = [
+        'id_user' => $request->input('id_user'),
+        'rate' => $request->input('rate'),
+        'id_blog' => $request->input('id_blog'),
+    ];
+    Rate::create($data);
+    return response()->json(['message' => 'Rate handled successfully','rate' => $data['rate']]);
+
+}
+
+    public function handleComment(Request $request){
+
+        $id_user =  Auth::id() ;
+        $name =  Auth::user()->name  ;
+        $avatar =Auth::user()->avatar  ;
+
+        $cmt = $request->cmt;
+        $id_blog = $request->id_blog;
+        $level = $request->level;
+
+        $data = [
+            'cmt'=> $cmt,
+            'id_blog' =>$id_blog,
+            'id_user'=>$id_user,
+            'avatar'=>$avatar,
+            'name'=>$name,
+            'level'=>$level,
+        ];
+
+        $cmt = Comment::create($data);
+        $cmtId = $cmt->id;
+        $data['id'] = $cmtId;
+    return response()->json(['message' => 'Post comment  successfully','data' => $data]);        
+    }
+
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        //
+    }
+}
